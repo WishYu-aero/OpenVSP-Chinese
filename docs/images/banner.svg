@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="420" viewBox="0 0 1600 420">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0a101c"/>
+      <stop offset="100%" stop-color="#12243a"/>
+    </linearGradient>
+    <pattern id="grid" width="80" height="80" patternUnits="userSpaceOnUse">
+      <path d="M 80 0 L 0 0 0 80" fill="none" stroke="#20344d" stroke-width="1"/>
+    </pattern>
+  </defs>
+  <rect width="1600" height="420" fill="url(#bg)"/>
+  <rect width="1600" height="420" fill="url(#grid)" opacity="0.65"/>
+  <g stroke="#49b7ff" stroke-width="3" fill="none" opacity="0.9">
+    <path d="M180 290 C 360 210, 520 160, 790 210 S 1190 310, 1400 190"/>
+    <path d="M210 175 L 1410 175"/>
+    <path d="M790 90 L 790 330"/>
+    <ellipse cx="790" cy="210" rx="108" ry="58"/>
+    <path d="M630 125 C 710 80, 890 80, 970 125"/>
+    <path d="M630 295 C 710 340, 890 340, 970 295"/>
+  </g>
+  <g fill="#f4f8ff" font-family="Segoe UI, Arial, sans-serif">
+    <text x="88" y="98" font-size="58" font-weight="700">VSP-Chinese</text>
+    <text x="88" y="156" font-size="26" fill="#b6cce5">OpenVSP 3.51.2 Simplified Chinese localization</text>
+    <text x="88" y="196" font-size="26" fill="#b6cce5">Windows x64 · runtime translation · release-ready</text>
+  </g>
+</svg>

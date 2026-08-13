@@ -1,12 +1,25 @@
 # VSP-Chinese
 
+![banner](docs/images/banner.svg)
+
+[![License: NOSA 1.3](https://img.shields.io/badge/License-NOSA%201.3-blue.svg)](source/OpenVSP/LICENSE)
+[![Windows](https://img.shields.io/badge/Platform-Windows%20x64-0078d4.svg)](#)
+[![Translation audit](https://img.shields.io/badge/Translation%20audit-0%20untranslated%20literals-1f8b4c.svg)](docs/RELEASE_CHECKLIST.md)
+
 OpenVSP 3.51.2 简体中文汉化版，面向 Windows x64。
 
-## 快速开始
+## 下载
 
-1. 下载 GitHub Releases 中的完整运行包
-2. 解压后直接运行 `vsp.exe` 或 `vspviewer.exe`
-3. 保持 `translations\zh-CN.json` 与可执行文件同级或位于 `translations\` 目录下
+- 运行包下载：GitHub Releases
+- 源码下载：对应 tag 的源码归档
+- 发布说明：`docs/RELEASE_TEMPLATE.md`
+
+## 一眼看懂
+
+- 基于 OpenVSP 3.51.2
+- 运行时加载 `translations/zh-CN.json`
+- 支持 Windows 目录式发布
+- 适合 GUI 汉化和二次开发
 
 ## 发布内容
 
@@ -15,19 +28,13 @@ OpenVSP 3.51.2 简体中文汉化版，面向 Windows x64。
 - 完整运行目录
 - `LICENSE`
 - `NOTICE.md`
-- `translations\zh-CN.json`
+- `translations/zh-CN.json`
 
-不要只发布单个 `vsp.exe`。
+## 快速开始
 
-## Releases
-
-发布页建议包含三类附件：
-
-- 运行包：可直接解压运行的完整目录
-- 源码包：对应标签的源码归档或仓库链接
-- 说明包：`LICENSE`、`NOTICE.md`、版本说明和变更摘要
-
-发布说明模板见 `docs/RELEASE_TEMPLATE.md`。
+1. 下载 GitHub Releases 中的完整运行包
+2. 解压后直接运行 `vsp.exe` 或 `vspviewer.exe`
+3. 保持 `translations\zh-CN.json` 与可执行文件同级或位于 `translations\` 目录下
 
 ## 项目结构
 
@@ -43,15 +50,9 @@ VSP-Chinese/
 └─ README.md
 ```
 
-## 用户说明
-
-- 首次运行如未显示中文，请确认 `translations\zh-CN.json` 未被移动或删除
-- 运行包中的目录结构不要随意改名
-- 本项目是 OpenVSP 的修改版，不是官方发布版
-
 ## 开发者入口
 
-如果你要继续扩展汉化，先看这两个文件：
+继续扩展汉化时，先看这两个文件：
 
 - `source/OpenVSP/src/gui_and_draw/Localization.cpp`
 - `source/OpenVSP/src/vsp_aero/Viewer/ViewerLocalization.C`
@@ -66,8 +67,6 @@ VSP-Chinese/
 - MSVC v143
 - Windows SDK
 - CMake
-
-运行：
 
 ```powershell
 Set-ExecutionPolicy -Scope Process Bypass
