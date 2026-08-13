@@ -1,4 +1,4 @@
-# VSP-Chinese
+# OpenVSP-Chinese
 
 ![banner](docs/images/banner.svg)
 
@@ -8,11 +8,14 @@
 
 OpenVSP 3.51.2 简体中文汉化版，面向 Windows x64。
 
+这是基于 [OpenVSP](https://github.com/OpenVSP/OpenVSP) 的中文本地化发布仓库，包含运行时翻译、Windows 构建脚本和发布说明。
+
 ## 下载
 
 - 运行包下载：GitHub Releases
 - 源码下载：对应 tag 的源码归档
 - 发布说明：`docs/RELEASE_TEMPLATE.md`
+- 发布检查：`docs/RELEASE_CHECKLIST.md`
 
 ## 一眼看懂
 
@@ -20,6 +23,7 @@ OpenVSP 3.51.2 简体中文汉化版，面向 Windows x64。
 - 运行时加载 `translations/zh-CN.json`
 - 支持 Windows 目录式发布
 - 适合 GUI 汉化和二次开发
+- 仓库主页展示横幅：`docs/images/banner.svg`
 
 ## 发布内容
 
