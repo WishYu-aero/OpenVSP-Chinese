@@ -1,0 +1,221 @@
+name: CMake Build Matrix
+
+on:
+  push:
+    branches: build
+
+jobs:
+  build:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [3.11, 3.13]
+        os: [ windows-2022, ubuntu-24.04, ubuntu-26.04, macos-15-intel, macos-14 ]
+        exclude:
+          - os: ubuntu-24.04
+            python-version: 3.11
+          - os: ubuntu-26.04
+            python-version: 3.11
+        include:
+          - os: ubuntu-24.04
+            gcc-version: 13
+          - os: ubuntu-26.04
+            gcc-version: 13
+          - os: macos-15-intel
+            llvm-version: 16  # AngelScript won't build on Intel Macs with llvm@17 or newer.
+          - os: macos-14
+            llvm-version: 18
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v7
+
+    - name: Set up Python ${{ matrix.python-version }}
+      if: runner.os != 'Linux'
+      uses: actions/setup-python@v6
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install cmake
+      uses: jwlawson/actions-setup-cmake@v2.2.0
+      with:
+        cmake-version: '3.x'
+
+    - name:  Install Linux
+      if: runner.os == 'Linux'
+      shell: bash
+      run:   |
+        sudo apt-get update
+        sudo apt-get install python3-dev libxml2-dev libfltk1.3-dev fluid libjpeg-dev libglm-dev libcminpack-dev libglew-dev swig doxygen graphviz texlive-latex-base zip pandoc
+        sudo apt-get install gcc-${{ matrix.gcc-version }} g++-${{ matrix.gcc-version }}
+        python -m venv $GITHUB_WORKSPACE/.venv
+        source $GITHUB_WORKSPACE/.venv/bin/activate
+        pip install --upgrade pip setuptools wheel
+        pip install sphinx numpy
+
+    - name:  Install Windows
+      if: runner.os == 'Windows'
+      shell: cmd
+      run:   |
+        choco install -y swig pandoc
+        pip install sphinx numpy
+
+    - name:  Install MacOS
+      if: runner.os == 'macos'
+      shell: bash
+      run:   |
+        # Remove untrusted pre-installed Homebrew taps to silence GitHub Actions warnings
+        # azure/bicep tap ships with bicep installed; uninstall it before untapping.
+        brew untap aws/tap || true
+        brew uninstall bicep 2>/dev/null || true
+        brew untap azure/bicep || true
+
+        brew install swig libomp doxygen graphviz pandoc
+
+        # llvm@16/18 depends on Python 3.12, but installing it via brew can conflict with the Python
+        # already installed by the runner image or actions/setup-python.
+        # --ignore-dependencies skips installing Homebrew's Python when llvm is installed.
+        # Note: --ignore-dependencies is a deprecated Homebrew developer option.  If it stops working,
+        # investigate pre-installing all non-Python llvm dependencies via `brew deps --tree llvm@X`
+        # and installing them explicitly before `brew install llvm@X`.
+        # Note, this risks some other dependencies not being installed.
+
+        # This command dumps the dependency tree for llvm
+        # brew deps --tree llvm@${{ matrix.llvm-version }}
+
+        # Inspection of that tree shows that installing zstd should cover all non-python dependencies.
+        brew install zstd
+        brew install llvm@${{ matrix.llvm-version }} --ignore-dependencies
+
+        pip install sphinx numpy
+
+    - name:  Build Linux
+      if: runner.os == 'Linux'
+      env:
+        CC: gcc-${{ matrix.gcc-version }}
+        CXX: g++-${{ matrix.gcc-version }}
+      shell: bash
+      run:   |
+        source $GITHUB_WORKSPACE/.venv/bin/activate
+        mkdir build buildlibs artifacts
+        cd $GITHUB_WORKSPACE/buildlibs
+        cmake -DCMAKE_BUILD_TYPE=Release -DVSP_USE_SYSTEM_LIBXML2=true -DVSP_USE_SYSTEM_GLM=true -DVSP_USE_SYSTEM_GLEW=true -DVSP_USE_SYSTEM_CMINPACK=true ../Libraries
+        make -j2
+        
+        cd $GITHUB_WORKSPACE/build
+        cmake -DCMAKE_BUILD_TYPE=Release -DVSP_CPACK_GEN=DEB -DVSP_LIBRARY_PATH=$GITHUB_WORKSPACE/buildlibs ../src
+        make -j2 package
+        
+        DEBFILE=${GITHUB_WORKSPACE}/build/OpenVSP-*-Linux.deb
+        VSPVER=$(ls $DEBFILE | awk 'BEGIN { FS = "-" } ; { print $2 }')
+        UVER=$(lsb_release -sr)
+        DEPLOY_FILE=${GITHUB_WORKSPACE}/build/OpenVSP-${VSPVER}-Ubuntu-${UVER}_amd64_${GITHUB_SHA}.deb
+        
+        cp $DEBFILE $DEPLOY_FILE
+        cp $DEPLOY_FILE $GITHUB_WORKSPACE/artifacts
+        
+        ls $DEPLOY_FILE && (echo "DEB CREATION SUCCESSFUL" && exit 0) || (echo "DEB CREATION FAILED" && exit 1)
+
+    - name:  Build Windows
+      if: runner.os == 'Windows'
+      shell: bash
+      run:   |
+        mkdir build buildlibs artifacts
+        cd $GITHUB_WORKSPACE\\buildlibs
+        cmake -DCMAKE_BUILD_TYPE=Release -A x64 ..\\Libraries
+
+        cmake --build . --config Release -j 2
+        cd $GITHUB_WORKSPACE\\build
+
+        cmake -DCMAKE_BUILD_TYPE=Release -DVSP_LIBRARY_PATH=$GITHUB_WORKSPACE\\buildlibs -A x64 ..\\src
+
+        cmake --build . --target package --config Release -j 2
+
+        ZIPFILE=OpenVSP*.zip
+        VSPVER=$(ls $ZIPFILE | awk 'BEGIN { FS = "-" } ; { print $2 }')
+        WINVER=$(ls $ZIPFILE | awk 'BEGIN { FS = "-" } ; { print $3 }' | awk 'BEGIN { FS = "." } ; { print $1 }' )
+        
+        DEPLOY_FILE=OpenVSP-${VSPVER}-${WINVER}-Python${{ matrix.python-version }}_${GITHUB_SHA}.zip
+        cp $ZIPFILE $DEPLOY_FILE
+        cp $DEPLOY_FILE $GITHUB_WORKSPACE\\artifacts
+        
+        ls $DEPLOY_FILE && (echo "ZIP CREATION SUCCESSFUL" && exit 0) || (echo "ZIP CREATION FAILED" && exit 1)
+
+    - name:  Build MacOS
+      if: runner.os == 'macos'
+      shell: bash
+      run:   |
+        mkdir build buildlibs artifacts
+        cd $GITHUB_WORKSPACE/buildlibs
+        cmake -DCMAKE_C_COMPILER=$(brew --prefix llvm@${{ matrix.llvm-version }})/bin/clang -DCMAKE_CXX_COMPILER=$(brew --prefix llvm@${{ matrix.llvm-version }})/bin/clang++ -DCMAKE_BUILD_TYPE=Release ../Libraries
+        make -j2
+        
+        cd $GITHUB_WORKSPACE/build
+        cmake -DVSP_LIBRARY_PATH=$GITHUB_WORKSPACE/buildlibs -DOpenMP_ROOT=$(brew --prefix libomp) -DCMAKE_C_COMPILER=$(brew --prefix llvm@${{ matrix.llvm-version }})/bin/clang -DCMAKE_CXX_COMPILER=$(brew --prefix llvm@${{ matrix.llvm-version }})/bin/clang++ -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="~/OpenVSP_Install" ../src
+        make -j2 package
+        
+        ZIPFILE=${GITHUB_WORKSPACE}/build/OpenVSP-*-MacOS.zip
+        VSPVER=$(ls $ZIPFILE | awk 'BEGIN { FS = "-" } ; { print $2 }')
+        DEPLOY_FILE=${GITHUB_WORKSPACE}/build/OpenVSP-${VSPVER}-${{ matrix.os }}-${RUNNER_ARCH}-Python${{ matrix.python-version }}_${GITHUB_SHA}.zip
+        
+        cp $ZIPFILE $DEPLOY_FILE
+        cp $DEPLOY_FILE $GITHUB_WORKSPACE/artifacts
+        
+        ls $DEPLOY_FILE && (echo "ZIP CREATION SUCCESSFUL" && exit 0) || (echo "ZIP CREATION FAILED" && exit 1)
+
+    - name:  Bundle MacOS App
+      if: runner.os == 'macos'
+      shell: bash
+      run:   |
+        cd $GITHUB_WORKSPACE/build
+        cmake -DVSP_CPACK_GEN=BUNDLE -DVSP_LIBRARY_PATH=$GITHUB_WORKSPACE/buildlibs -DOpenMP_ROOT=$(brew --prefix libomp) -DCMAKE_C_COMPILER=$(brew --prefix llvm@${{ matrix.llvm-version }})/bin/clang -DCMAKE_CXX_COMPILER=$(brew --prefix llvm@${{ matrix.llvm-version }})/bin/clang++ -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="~/OpenVSP_Install" ../src
+        make -j2 package
+
+        DMGFILE=${GITHUB_WORKSPACE}/build/OpenVSP-*-MacOS.dmg
+        VSPVER=$(ls $DMGFILE | awk 'BEGIN { FS = "-" } ; { print $2 }')
+        DEPLOY_FILE=${GITHUB_WORKSPACE}/build/OpenVSP-${VSPVER}-${{ matrix.os }}-${RUNNER_ARCH}-Python${{ matrix.python-version }}_${GITHUB_SHA}.dmg
+
+        cp $DMGFILE $DEPLOY_FILE
+        cp $DEPLOY_FILE $GITHUB_WORKSPACE/artifacts
+
+        ls $DEPLOY_FILE && (echo "DMG CREATION SUCCESSFUL" && exit 0) || (echo "DMG CREATION FAILED" && exit 1)
+
+    - name: Generate Documentation
+      if: matrix.os == 'macos-14'
+      shell: bash
+      run:    |
+        cd $GITHUB_WORKSPACE/build
+
+        make doc
+
+        cd doc
+        zip -r html.zip html
+
+        cp html.zip $GITHUB_WORKSPACE/artifacts
+        ls html.zip && (echo "DOC GEN SUCCESSFUL" && exit 0) || (echo "DOC GEN FAILED" && exit 1)
+
+    - name: Python Documentation
+      if: matrix.os == 'macos-14'
+      shell: bash
+      run:    |
+        cd $GITHUB_WORKSPACE/build
+
+        cp pydoc.zip $GITHUB_WORKSPACE/artifacts
+        ls pydoc.zip && (echo "PYDOC COPY SUCCESSFUL" ) || (echo "PYDOC COPY FAILED" )
+
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v7
+      with:
+        name: artifact-${{ matrix.os }}-${{ matrix.python-version }}
+        path: ${{ github.workspace }}/artifacts
+
+  merge:
+   runs-on: ubuntu-latest
+   needs: build
+   steps:
+     - name: Merge Artifacts
+       uses: actions/upload-artifact/merge@v7
+       with:
+         name: combined-artifact
+         pattern: artifact-*

@@ -1,0 +1,9 @@
+name: vsppytools
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=@PYTHON_VERSION_SHORT@
+  - numpy!=1.19.4
+  - matplotlib
+  - pathlib

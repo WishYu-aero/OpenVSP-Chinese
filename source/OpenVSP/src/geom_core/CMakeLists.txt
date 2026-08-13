@@ -1,0 +1,207 @@
+CMAKE_MINIMUM_REQUIRED(VERSION 3.24)
+
+SET(GEOM_CORE_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR} CACHE PATH "Path to geom_core headers")
+
+INCLUDE_DIRECTORIES(
+    ${ANGELSCRIPT_INCLUDE_DIR}
+    ${CLIPPER2_INCLUDE_DIR}
+    ${CMINPACK_INCLUDE_DIR}
+    ${CodeEli_INCLUDE_DIRS}
+    ${CPPTEST_INCLUDE_DIRS}
+    ${DELABELLA_INCLUDE_DIR}
+    ${GEOM_API_INCLUDE_DIR}
+    ${LIBIGES_INCLUDE_DIR}
+    ${LIBIGL_INCLUDE_DIR}
+    ${LIBXML2_INCLUDE_DIR}
+    ${NANOFLANN_INCLUDE_DIR}
+    ${PINOCCHIO_INCLUDE_DIR}
+    ${PROJECT_SOURCE_DIR}/geom_api
+    ${ROBUST_INCLUDE_DIR}
+    ${STB_INCLUDE_DIR}
+    ${STEPCODE_INCLUDE_DIR}
+    ${TRIANGLE_INCLUDE_DIR}
+    ${TRITRI_INCLUDE_DIR}
+    ${UTIL_INCLUDE_DIR}
+    ${UTIL_API_INCLUDE_DIR}
+    ${WAVEDRAGEL_INCLUDE_DIR}
+    ${XMLVSP_INCLUDE_DIR}
+    ${GTE_INCLUDE_DIR}
+   )
+
+MESSAGE( STATUS "PINOCCHIO_INCLUDE_DIR " ${PINOCCHIO_INCLUDE_DIR})
+
+ADD_LIBRARY(geom_core
+AdvLink.cpp
+AdvLinkMgr.cpp
+AeroStructMgr.cpp
+Airfoil.cpp
+AnalysisMgr.cpp
+Atmosphere.cpp
+AttributeManager.cpp
+AuxiliaryGeom.cpp
+Background3D.cpp
+Background3DMgr.cpp
+BlankGeom.cpp
+BORGeom.cpp
+ClippingMgr.cpp
+CobraGeom.cpp
+ConformalGeom.cpp
+CustomGeom.cpp
+DegenGeom.cpp
+DesignVarMgr.cpp
+EllipsoidGeom.cpp
+FeaStructure.cpp
+FitModelMgr.cpp
+FuselageGeom.cpp
+GearGeom.cpp
+Geom.cpp
+GeometryAnalysisMgr.cpp
+GeomCoreTestSuite.cpp
+GeomEngine.cpp
+GridDensity.cpp
+GroupTransformations.cpp
+HingeGeom.cpp
+HumanGeom.cpp
+IDMgr.cpp
+Link.cpp
+LinkMgr.cpp
+MainThreadIDMgr.cpp
+MaterialMgr.cpp
+Measure.cpp
+MeasureMgr.cpp
+MeshCommonSettings.cpp
+MeshGeom.cpp
+ModeMgr.cpp
+NGonMeshGeom.cpp
+ParasiteDragMgr.cpp
+Parm.cpp
+ParmContainer.cpp
+ParmMgr.cpp
+ParmUndo.cpp
+PCurve.cpp
+PGMesh.cpp
+PodGeom.cpp
+ProjectionMgr.cpp
+PropGeom.cpp
+PtCloudGeom.cpp
+ResultsMgr.cpp
+RoutingGeom.cpp
+ScriptMgr.cpp
+SnapTo.cpp
+StackGeom.cpp
+StructureMgr.cpp
+SubSurface.cpp
+SubSurfaceMgr.cpp
+SVGUtil.cpp
+Texture.cpp
+TextureMgr.cpp
+TMesh.cpp
+TMeshIO.cpp
+TMeshSweptVolume.cpp
+TMeshUtil.cpp
+UserParmContainer.cpp
+VarPresetMgr.cpp
+Vehicle.cpp
+VehicleMgr.cpp
+WaveDragMgr.cpp
+WingGeom.cpp
+WireGeom.cpp
+XSec.cpp
+XSecCurve.cpp
+XSecSurf.cpp
+Light.cpp
+LightMgr.cpp
+Color.cpp
+ColorMgr.cpp
+VSPAEROMgr.cpp
+AdvLink.h
+AdvLinkMgr.h
+AeroStructMgr.h
+Airfoil.h
+AnalysisMgr.h
+Atmosphere.h
+AttributeManager.h
+AuxiliaryGeom.h
+Background3D.h
+Background3DMgr.h
+BlankGeom.h
+BORGeom.h
+ClippingMgr.h
+CobraGeom.h
+Color.h
+ColorMgr.h
+ConformalGeom.h
+CustomGeom.h
+DegenGeom.h
+DesignVarMgr.h
+EllipsoidGeom.h
+FeaStructure.h
+FemaleGeomDataReduced.h
+FitModelMgr.h
+FuselageGeom.h
+GearGeom.h
+Geom.h
+GeometryAnalysisMgr.h
+GeomCoreTestSuite.h
+GeomEngine.h
+GridDensity.h
+GroupTransformations.h
+HingeGeom.h
+HumanGeom.h
+IDMgr.h
+Light.h
+LightMgr.h
+Link.h
+LinkMgr.h
+MainThreadIDMgr.h
+MaleGeomDataReduced.h
+MaterialMgr.h
+Measure.h
+MeasureMgr.h
+MeshCommonSettings.h
+MeshGeom.h
+ModeMgr.h
+NGonMeshGeom.h
+ParasiteDragMgr.h
+Parm.h
+ParmContainer.h
+ParmMgr.h
+ParmUndo.h
+PCurve.h
+PGMesh.h
+PodGeom.h
+ProjectionMgr.h
+PropGeom.h
+PtCloudGeom.h
+ResultsMgr.h
+RoutingGeom.h
+ScriptMgr.h
+SnapTo.h
+StackGeom.h
+StructureMgr.h
+SubSurface.h
+SubSurfaceMgr.h
+SWIGDefines.h
+SVGUtil.h
+Texture.h
+TextureMgr.h
+TMesh.h
+TMeshSweptVolume.h
+UserParmContainer.h
+VarPresetMgr.h
+Vehicle.h
+VehicleMgr.h
+VSPAEROMgr.h
+WaveDragMgr.h
+WingGeom.h
+WireGeom.h
+XSec.h
+XSecCurve.h
+XSecSurf.h
+)
+
+ADD_DEPENDENCIES( geom_core
+util
+)
+
+target_link_libraries( geom_core Eigen3::Eigen )

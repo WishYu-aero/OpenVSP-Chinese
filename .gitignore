@@ -1,0 +1,25 @@
+# Local build and release outputs
+build/
+build-*/
+dist/*
+!dist/.gitkeep
+releases/
+release/
+*.zip
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Visual Studio and CMake
+.vs/
+*.user
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+install_manifest.txt
+
+# Generated translation audit reports
+translations/gui-candidates.json
+translations/gui-preserved.json
+translations/gui-untranslated.json

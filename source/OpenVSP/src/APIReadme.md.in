@@ -1,0 +1,98 @@
+
+
+    # Documentation for the OpenVSP API
+
+This is the documentation for the classes, enumerations, and functions available in the OpenVSP API.
+
+The API functions are organized into the following groups:
+
+- [Advanced Link](group___advanced_link.html)
+- [Analysis Manager](group___analysis.html)
+- [API Error](group___a_p_i_error.html)
+- [API Utility](group___a_p_i_utilities.html)
+- [Attributes](group___attributes.html)
+- [Background 3D](group___background3_d.html)
+- [BOR](group___b_o_r.html)
+- [CFD Mesh](group___c_f_d_mesh.html)
+- [Computation](group___computations.html)
+- [Custom Geometry](group___custom_geom.html)
+- [Design File](group___design_file.html)
+- [Edit Curve XSec](group___edit_curve_x_sec.html)
+- [Enumerations](group___enumerations.html)
+- [FEA Mesh](group___f_e_a_mesh.html)
+- [File Input and Output](group___file_i_o.html)
+- [Geom](group___geom.html)
+- [Geom Surface Query](group___surface_query.html)
+- [Group Modification](group___group_mod.html)
+- [Matrix4d](group___matrix4d.html)
+- [Measure Tool](group___measure.html)
+- [Mode](group___mode.html)
+- [Parasite Drag](group___parasite_drag.html)
+- [Parm Container](group___parm_container.html)
+- [Parm](group___parm.html)
+- [Propeller Blade Curve](group___p_curve.html)
+- [Results Manager](group___results.html)
+- [Sets](group___sets.html)
+- [Snap-To](group___snap_to.html)
+- [Sub-Surface](group___sub_surface.html)
+- [Variable Preset](group___variable_preset.html)
+- [Vec3D](group__vec3d.html)
+- [Vehicle](group___vehicle.html)
+- [Visualization](group___visualization.html)
+- [VSPAERO Actuator Disk and Propeller](group___v_s_p_a_e_r_o_disk_and_prop.html)
+- [VSPAERO Control Surface Group](group___c_s_group.html)
+- [VSPAERO](group___v_s_p_a_e_r_o.html)
+- [XSec and Airfoil](group___x_sec.html)
+- [XSecSurf](group___x_sec_surf.html)
+
+
+The OpenVSP API classes with member functions are identified here:
+
+- [vec3d](classvec3d.html)
+- [Matrix4d](class_matrix4d.html)
+
+## Help
+### Overview
+OpenVSP includes an API written in C++ that exposes all of the functionality of the GUI to a programming interface. This allows
+OpenVSP modeling and analysis tools to be run on headless systems, directly integrated with external software programs, and
+automated for trade studies and optimization purposes. The OpenVSP API & MATLAB/Python Integration presentation from
+the [2020 OpenVSP Workshop](http://openvsp.org/wiki/doku.php?id=workshop2020) is a good resource to learn more about the API.
+For specific API questions, the [OpenVSP Google Group](https://groups.google.com/forum/#!forum/openvsp) is available.
+
+### Examples
+OpenVSP API examples are available in the **scripts** directory of the distribution. These example scripts are written in
+AngelScript, but map very closely for the Python API. CustomGeom examples, also written in Angelscipt, are available in the
+**CustomScripts** directory. An example for using the Python API can be found in **python/openvsp/openvsp/tests**. The
+matlab_api directory includes examples for the MATLAB API in the form of test suites.
+
+### Angelscript
+All OpenVSP C++ API functions are registered with Angelscript, a language that is virtually identical in syntax to C++.
+API functions can be called from *.vspscript files and then run from either the GUI (File -> Run Script...) or through the
+vspscript executable's command line interface. Custom Geom scripts, identified by the *.vsppart file extension, also call
+API functions. These scripts are loaded automatically when OpenVSP is launched. Note, all models saved with a Custom Geom
+will include the *.vsppart code in the *.vsp3 file.
+
+### Python API Instructions
+View the **README** file in the **python** directory of the distribution for instructions on Python API installation. Note, the Python
+version must be the same as what OpenVSP was compiled with. For instance OpenVSP 3.21.2 Win64 requires Python 3.6-x64. If a different
+version of Python is desired, the user must compile OpenVSP themselves.
+
+### MATLAB API
+The MATLAB API template (matlab_api) is included with the OpenVSP source code, but not the distributed binaries. This is because it requires
+an unreleased branch of SWIG and MATLAB with a valid license. Users are able to build the MATLAB API if they are willing
+to compile OpenVSP themselves. Presentations on compiling OpenVSP and building the MATLAB API are available from the
+[2020 OpenVSP Workshop](http://openvsp.org/wiki/doku.php?id=workshop2020)
+
+## Improvements
+### Users
+Users are encouraged to make use of the [GitHub Issue Tracker](https://github.com/OpenVSP/OpenVSP) if they have a suggestions,
+feature request, or bug report for the OpenVSP developers. Please add an issue if an API function or capability is missing,
+not working correctly, or poorly documented.
+
+## Links
+
+ - [Wiki](http://openvsp.org/wiki/doku.php)
+ - [OpenVSP Main Page](http://openvsp.org/)
+ - [Google Group](https://groups.google.com/forum/#!forum/openvsp)
+ - [Source Code on GitHub](https://github.com/OpenVSP/OpenVSP)
+

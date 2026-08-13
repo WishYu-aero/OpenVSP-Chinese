@@ -1,0 +1,426 @@
+//
+// This file is released under the terms of the NASA Open Source Agreement (NOSA)
+// version 1.3 as detailed in the LICENSE file which accompanies this software.
+//
+
+//******************************************************************************
+//
+//   Bezier Curve Class  (Cubic)
+//
+//
+//   J.R. Gloudemans - 7/20/94
+//   Sterling Software
+//
+//******************************************************************************
+
+#include "BezierCurve.h"
+#include "VspUtil.h"
+
+#include "eli/geom/curve/length.hpp"
+
+typedef piecewise_curve_type::index_type curve_index_type;
+typedef piecewise_curve_type::tolerance_type curve_tolerance_type;
+typedef piecewise_curve_type::bounding_box_type curve_bounding_box_type;
+typedef piecewise_curve_type::point_type curve_point_type;
+
+typedef eli::geom::curve::piecewise_linear_creator<double, 3, curve_tolerance_type> piecewise_linear_creator_type;
+
+//===== Constructor  =====//
+Bezier_curve::Bezier_curve()
+{
+}
+
+
+Bezier_curve::Bezier_curve( const piecewise_curve_type &crv )
+{
+    m_Curve = crv;
+}
+
+//===== Compute Point  =====//
+vec3d Bezier_curve::CompPnt( double u ) const
+{
+    vec3d rtn;
+
+    // Code-Eli does not handle out-of-bounds very well.
+    if ( u > m_Curve.number_segments() )
+        u = m_Curve.number_segments();
+
+    curve_point_type v( m_Curve.f( u ) );
+    rtn.set_xyz( v.x(), v.y(), v.z() );
+
+    return rtn;
+}
+
+//===== Compute Point  =====//
+vec3d Bezier_curve::CompPnt01( double u ) const
+{
+    vec3d rtn;
+
+    // Code-Eli does not handle out-of-bounds very well.
+    if ( u > 1.0 )
+        u = 1.0;
+
+    curve_point_type v( m_Curve.f( u * m_Curve.number_segments() ) );
+    rtn.set_xyz( v.x(), v.y(), v.z() );
+
+    return rtn;
+}
+
+void Bezier_curve::FlipCurve()
+{
+    m_Curve.reverse();
+}
+
+void Bezier_curve::BuildWakeTECurve( const piecewise_curve_type& lecrv, double endx, double angle, double start_stretch_x, double scale )
+{
+    m_Curve.clear();
+
+    double factor = scale - 1.0;
+    int nsect = lecrv.number_segments();
+
+    for ( int i = 0; i < nsect; i++ )
+    {
+        curve_segment_type c;
+        lecrv.get( c, i );
+
+        for ( int j = 0; j <= c.degree(); j++ )
+        {
+            curve_point_type le = c.get_control_point( j );
+            curve_point_type te = ComputeWakeTrailEdgePnt( le, endx, angle );
+            double numer = te.x() - start_stretch_x;
+            double fract = numer / ( endx - start_stretch_x );
+            double xx = start_stretch_x + numer * ( 1.0 + factor * fract * fract );
+            curve_point_type newpt = ComputeWakeTrailEdgePnt( te, xx, angle );
+            c.set_control_point( newpt, j );
+        }
+
+        m_Curve.push_back( c );
+    }
+}
+
+curve_point_type Bezier_curve::ComputeWakeTrailEdgePnt( const curve_point_type &pnt, double endx, double angle )
+{
+    curve_point_type wkpnt;
+    double z = pnt.z() + ( endx - pnt.x() ) * tan( DEG2RAD( angle ) );
+    wkpnt << endx, pnt.y(), z;
+    return wkpnt;
+}
+
+void Bezier_curve::GetControlPoints( vector< vec3d > &pnts_out )
+{
+    pnts_out.clear();
+
+    vector < curve_point_type > cp_vec;
+    m_Curve.get_control_point_vec( cp_vec );
+
+    pnts_out.reserve( cp_vec.size() );
+
+    for ( int i = 0; i < cp_vec.size(); i++ )
+    {
+        pnts_out.emplace_back( vec3d( cp_vec[i] ) );
+    }
+}
+
+vec3d Bezier_curve::FirstPnt() const  // Could be implemented with comp_pnt, but should be faster/more accurate.
+{
+    curve_segment_type c;
+    m_Curve.get( c, 0 );
+    curve_point_type cp = c.get_control_point( 0 );
+    vec3d p( cp.x(), cp.y(), cp.z() );
+    return p;
+}
+
+vec3d Bezier_curve::LastPnt() const
+{
+    curve_segment_type c;
+    m_Curve.get( c, m_Curve.number_segments() - 1 );
+    curve_point_type cp = c.get_control_point( c.degree() );
+    vec3d p( cp.x(), cp.y(), cp.z() );
+    return p;
+}
+
+struct surfWlimits
+{
+    piecewise_surface_type * surf;
+    double umin;
+    double umax;
+    double wmin;
+    double wmax;
+};
+
+curve_point_type UWToXYZ( curve_point_type & cp, void* data )
+{
+    surfWlimits *swlim = (surfWlimits *) data;
+    piecewise_surface_type *surf = swlim->surf;
+    double umn = swlim->umin;
+    double wmn = swlim->wmin;
+    double umx = swlim->umax;
+    double wmx = swlim->wmax;
+
+    double u = cp.x();
+    double w = cp.y();
+
+    double slop = 1e-3;
+    if( u < (umn - slop) || w < (wmn - slop) || u > (umx + slop) || w > (wmx + slop) )
+    {
+        printf("BAD parameter in Bezier_curve::UWToXYZ! %f %f\n", u, w );
+        assert(false);
+    }
+
+    u = clamp( u, umn, umx );
+    w = clamp( w, wmn, wmx );
+
+    return surf->f( u, w );
+}
+
+void Bezier_curve::UWCurveToXYZCurve( Surf *srf )
+{
+    piecewise_surface_type *surf = srf->GetSurfCore()->GetSurf();
+
+    surfWlimits swlim;
+    swlim.surf = surf;
+    swlim.umin = surf->get_u0();
+    swlim.wmin = surf->get_v0();
+    swlim.umax = surf->get_umax();
+    swlim.wmax = surf->get_vmax();
+
+    m_Curve.transmute( UWToXYZ, &swlim );
+}
+
+void Bezier_curve::XYZCurveToUWCurve( const Surf *srf )
+{
+    int nsect = m_Curve.number_segments();
+
+    piecewise_curve_type newcurve;
+    newcurve.set_t0( m_Curve.get_t0() );
+
+    for ( int i = 0; i < nsect; i++ )
+    {
+        curve_segment_type c;
+        double dt;
+        m_Curve.get( c, dt, i );
+
+        for ( int j = 0; j <= c.degree(); j++ )
+        {
+            curve_point_type cp = c.get_control_point( j );
+            vec3d p = vec3d( cp.x(), cp.y(), cp.z() );
+            vec2d uw = srf->ClosestUW( p, srf->GetSurfCore()->GetMidU(), srf->GetSurfCore()->GetMidW() );
+            cp << uw.x(), uw.y(), 0.0;
+            c.set_control_point( cp, j );
+        }
+        newcurve.push_back( c, dt );
+    }
+    m_Curve = newcurve;
+}
+
+int Bezier_curve::CountMatch( const Bezier_curve &ocrv, double tol ) const
+{
+    int num_match = 0;
+
+    int nsect = m_Curve.number_segments();
+
+    if ( nsect != ocrv.m_Curve.number_segments() )
+    {
+        return -1;
+    }
+
+    for ( int i = 0; i < nsect; i++ )
+    {
+        curve_segment_type cA, cB;
+        m_Curve.get( cA, i );
+        ocrv.m_Curve.get( cB, i );
+
+        if ( cA.degree() != cB.degree() )
+        {
+            return -1;
+        }
+
+        for ( int j = 0; j <= cA.degree(); j++ )
+        {
+            curve_point_type cpA = cA.get_control_point( j );
+            curve_point_type cpB = cB.get_control_point( j );
+
+            if ( eli::geom::point::distance( cpA, cpB ) < tol )
+            {
+                num_match++;
+            }
+        }
+    }
+    return num_match;
+}
+
+bool Bezier_curve::Match( const Bezier_curve &ocrv, double tol ) const
+{
+    if ( MatchFwd( ocrv, tol ) )
+        return true;
+
+    if ( MatchBkwd( ocrv, tol ) )
+        return true;
+
+    return false;
+}
+
+bool Bezier_curve::MatchFwd( const Bezier_curve &ocrv, double tol ) const
+{
+    int nsect = m_Curve.number_segments();
+
+    if ( nsect != ocrv.m_Curve.number_segments() )
+        return false;
+
+    for ( int i = 0; i < nsect; i++ )
+    {
+        curve_segment_type cA, cB;
+        m_Curve.get( cA, i );
+        ocrv.m_Curve.get( cB, i );
+
+        if ( cA.degree() != cB.degree() )
+        {
+            return false;
+        }
+
+        for ( int j = 0; j <= cA.degree(); j++ )
+        {
+            curve_point_type cpA = cA.get_control_point( j );
+            curve_point_type cpB = cB.get_control_point( j );
+
+            if ( eli::geom::point::distance( cpA, cpB ) > tol )
+            {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
+bool Bezier_curve::MatchBkwd( const Bezier_curve &ocrv, double tol ) const
+{
+    Bezier_curve revcrv = ocrv;
+    revcrv.FlipCurve();
+    return MatchFwd( revcrv, tol );
+}
+
+bool Bezier_curve::SingleLinear()
+{
+    int nsect = m_Curve.number_segments();
+
+    if ( nsect != 1 )
+    {
+        return false;
+    }
+
+    for ( int i = 0; i < nsect; i++ )
+    {
+        curve_segment_type cA;
+        m_Curve.get( cA, i );
+
+        if ( cA.degree() != 1 )
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+void Bezier_curve::GetBBox( BndBox &box )
+{
+    box.Reset();
+
+    curve_bounding_box_type bbox;
+    m_Curve.get_bounding_box( bbox );
+
+    box.Update( vec3d( bbox.get_max() ) );
+    box.Update( vec3d( bbox.get_min() ) );
+}
+
+//===== Tesselate =====//
+void Bezier_curve::TessAdaptXYZ( const Surf& srf, vector< vec3d >& output, double tol, int Nlimit )
+{
+    vector< double > uvec; // Ignore returned values
+    TessAdaptXYZ( srf, m_Curve.get_parameter_min(), m_Curve.get_parameter_max(), output, tol, Nlimit, uvec );
+}
+
+void Bezier_curve::TessAdaptXYZ( const Surf &srf, vector< vec3d > & output, double tol, int Nlimit, vector< double >& uvec )
+{
+    TessAdaptXYZ( srf, m_Curve.get_parameter_min(), m_Curve.get_parameter_max(), output, tol, Nlimit, uvec );
+}
+
+void Bezier_curve::TessAdaptXYZ( const Surf &srf, double umin, double umax, std::vector< vec3d > & pnts, double tol, int Nlimit, std::vector< double >& uvec )
+{
+    vec3d uwmin = vec3d( m_Curve.f( umin ) );
+    vec3d uwmax = vec3d( m_Curve.f( umax ) );
+    vec3d pmin = srf.CompPnt( uwmin.x(), uwmin.y() );
+    vec3d pmax = srf.CompPnt( uwmax.x(), uwmax.y() );
+
+    TessAdaptXYZ( srf, umin, umax, pmin, pmax, pnts, tol, Nlimit, uvec );
+
+    pnts.push_back( pmax );
+    uvec.push_back( umax );
+}
+
+void Bezier_curve::TessAdaptXYZ( const Surf &srf, double umin, double umax, const vec3d & pmin, const vec3d & pmax, std::vector< vec3d > & pnts, double tol, int Nlimit, std::vector< double >& uvec, int Nadapt )
+{
+    double umid = ( umin + umax ) * 0.5;
+
+    vec3d uwmid = vec3d( m_Curve.f( umid ) );
+    vec3d pmid = srf.CompPnt( uwmid.x(), uwmid.y() );
+
+    double d = dist_pnt_2_line( pmin, pmax, pmid ) / dist( pmin, pmax );
+
+    if ( ( d > tol && Nlimit > 0 ) || Nadapt < 3 )
+    {
+        TessAdaptXYZ( srf, umin, umid, pmin, pmid, pnts, tol, Nlimit - 1, uvec, Nadapt + 1 );
+        TessAdaptXYZ( srf, umid, umax, pmid, pmax, pnts, tol, Nlimit - 1, uvec, Nadapt + 1 );
+    }
+    else
+    {
+        pnts.push_back( pmin );
+        pnts.push_back( pmid );
+        uvec.push_back( umin );
+        uvec.push_back( umid );
+    }
+}
+
+//===== Interpolate Creates piecewise linear curves ===//
+void Bezier_curve::InterpolateLinear( const vector< vec3d > & input_pnt_vec )
+{
+    // copy points over to new type
+    vector<curve_point_type> pts( input_pnt_vec.size() );
+    for ( size_t i = 0; i < pts.size(); ++i )
+    {
+        pts[i] << input_pnt_vec[i].x(), input_pnt_vec[i].y(), input_pnt_vec[i].z();
+    }
+
+    int nseg( pts.size() - 1 );
+    piecewise_linear_creator_type plc( nseg );
+
+    // set the polygon corners
+    for ( curve_index_type i = 0; i < static_cast<curve_index_type>( pts.size() ); ++i )
+    {
+        plc.set_corner( pts[i], i );
+    }
+
+    if ( !plc.create( m_Curve ) )
+    {
+        std::cerr << "Failed to create linear curve. " << __LINE__ << std::endl;
+    }
+}
+
+void Bezier_curve::PromoteTo( int deg )
+{
+    m_Curve.degree_promote_to( deg );
+}
+
+#include <type_traits>
+// Guard the rule-of-zero cleanup: a user-declared destructor or copy operation would silently
+// suppress the implicit move operations that vector<Bezier_curve> relies on to avoid deep copies.
+// MSVC's std::map move operations are not noexcept (sentinel node allocation), so the
+// nothrow guarantee cannot hold for types holding Code-Eli piecewise members there --
+// vector reallocation copies these types on MSVC and moves them elsewhere.
+#if defined(_MSC_VER)
+static_assert( std::is_move_constructible< Bezier_curve >::value, "Bezier_curve must be move constructible" );
+static_assert( std::is_move_assignable< Bezier_curve >::value, "Bezier_curve must be move assignable" );
+#else
+static_assert( std::is_nothrow_move_constructible< Bezier_curve >::value, "Bezier_curve must be nothrow move constructible" );
+static_assert( std::is_nothrow_move_assignable< Bezier_curve >::value, "Bezier_curve must be nothrow move assignable" );
+#endif

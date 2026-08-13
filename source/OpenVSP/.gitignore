@@ -1,0 +1,12 @@
+.DS_Store
+build/
+buildlibs/
+inst/
+*.bak
+.idea/
+__pycache__/
+*.egg-info
+*.vscode
+CMakeSettings.json
+*.vs
+examples/scripts/python_scripts/*_files/*

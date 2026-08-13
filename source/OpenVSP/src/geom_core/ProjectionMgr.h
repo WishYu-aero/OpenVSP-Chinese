@@ -1,0 +1,159 @@
+//
+// This file is released under the terms of the NASA Open Source Agreement (NOSA)
+// version 1.3 as detailed in the LICENSE file which accompanies this software.
+//
+
+// ProjectionMgr.h: interface for the Projection Singleton.
+//
+//////////////////////////////////////////////////////////////////////
+
+#if !defined(PROJECTION__INCLUDED_)
+#define PROJECTION__INCLUDED_
+
+#include "clipper2/clipper.h"
+
+#include "Vec3d.h"
+#include "Vec2d.h"
+#include "Matrix4d.h"
+#include "TMesh.h"
+#include "DrawObj.h"
+#include "Parm.h"
+#include "ResultsMgr.h"
+
+#include <vector>
+#include <string>
+
+using std::string;
+using std::vector;
+
+//==== Projection Manager ====//
+class ProjectionMgrSingleton
+{
+public:
+    static ProjectionMgrSingleton& getInstance()
+    {
+        static ProjectionMgrSingleton instance;
+        return instance;
+    }
+
+    virtual void SetGeomIDs( const string &tid, const string &bid, const string &did );
+
+    static vec3d GetDirection( int dirtype, const string &dirid );
+
+    virtual void UpdateDirection();
+    virtual vec3d GetDirection();
+
+    virtual void Renew();
+
+    virtual void LoadDrawObjs( vector< DrawObj* > & draw_obj_vec );
+
+    virtual Results* Project( );
+
+    virtual void PointOcclusionPath( TMesh* &target_tm, const vec3d &cen, TMesh *fov,
+                                     Matrix4d &centranslatemat, Clipper2Lib::Paths64 &solution );
+
+    virtual string PointVisibility( vector < TMesh* > &targetTMeshVec, const vector < vec3d > & cen,
+                                    vector<TMesh *> &fov_vec, vector < TMesh* > & result_tmv,
+                                    bool poly_visible, const vector < string > & cutout_vec );
+
+    virtual string VisibilityPost( Clipper2Lib::Paths64 &solution,
+                                   const Matrix4d &clipper2sphericalmat, Matrix4d &centranslatemat,
+                                   double r, const vec3d &cen,
+                                   vector< TMesh* > & result_tmv, bool poly_visible );
+
+    virtual Results* Project( int tset, bool thullflag, const vec3d & dir );
+    virtual Results* Project( int tset, bool thullflag, int bset, bool bhullflag, const vec3d & dir, bool diskSegmentBreakdown );
+    virtual Results* Project( int tset, bool thullflag, const string &bgeom, bool bhullflag, const vec3d & dir, bool diskSegmentBreakdown );
+
+    virtual Results* Project( const string &tgeom, bool thullflag, const vec3d & dir );
+    virtual Results* Project( const string &tgeom, bool thullflag, int bset, bool bhullflag, const vec3d & dir, bool diskSegmentBreakdown );
+    virtual Results* Project( const string &tgeom, bool thullflag, const string &bgeom, bool bhullflag, const vec3d & dir, bool diskSegmentBreakdown );
+
+    virtual bool Project( vector < TMesh* > &targetTMeshVec, const vec3d & dir, Results* res, vector < TMesh* > &solutionTMeshVec, vector < vector < vec3d > > &solutionPolyVec3d );
+    virtual bool Project( vector < TMesh* > &targetTMeshVec, vector < TMesh* > &boundaryTMeshVec, const vec3d & dir, bool diskSegmentBreakdown, Results* res, vector < TMesh* > &solutionTMeshVec, vector < vector < vec3d > > &solutionPolyVec3d );
+
+    virtual string MakeMeshGeom( const vector < TMesh * > &tmv, const vector < vector < vec3d > > &solutionPolyVec3d );
+
+    virtual void ExportProjectLines( vector < TMesh* > targetTMeshVec );
+
+    int m_TargetSetIndex;
+    int m_BoundarySetIndex;
+
+    string m_ModeID;
+    string m_TargetGeomID;
+    string m_BoundaryGeomID;
+    string m_DirectionGeomID;
+
+protected:
+
+    virtual void MeshToCartesian( vector < TMesh* > & tmv );
+    virtual void PolyVecToCartesian( vector < vector < vec3d > > & polyvec );
+
+    virtual void TransformPolyVec( vector < vec3d > & polyvec, const Matrix4d & mat );
+    virtual void TransformPolyVec( vector < vector < vec3d > > & polyvec, const Matrix4d & mat );
+
+    virtual void UpdateBBox( vector < TMesh* > & tmv );
+
+    virtual void MeshToPaths( const vector < TMesh* > & tmv, Clipper2Lib::Paths64 & pths );
+    virtual void PGMeshToPathsVec( PGMesh *pgm, vector < Clipper2Lib::Paths64 > & pths,
+                                   vector < double > & uminvec, vector < double > & umaxvec,
+                                   vector < double > & wminvec, vector < double > & wmaxvec, vector<vec3d> &cenvec );
+
+    virtual void MeshToPathsVec( const vector < TMesh* > & tmv, vector < Clipper2Lib::Paths64 > & pths, vector < string > & ids, int keepdir1 = 1, int keepdir2 = 2 );
+
+    virtual void MeshToSphericalPathsVec( TMesh* tm, Clipper2Lib::Paths64 & pth );
+    virtual void SphericalDomainPath( Clipper2Lib::Paths64 & pth );
+    virtual void OctantDomainPath( int ioct, Clipper2Lib::Paths64 & pth, string & label );
+    virtual void PathsToPolyVec( const Clipper2Lib::Paths64 & pths, vector < vector < vec3d > > & polyvec, int keepdir1 = 1, int keepdir2 = 2 );
+    virtual void PathsToPolyVec( const vector < Clipper2Lib::Paths64 > & pths, vector < vector < vec3d > > & polyvec, int keepdir1 = 1, int keepdir2 = 2 );
+    virtual void RefinePolyVec( vector < vector < vec3d > > & polyvec );
+
+    virtual void Poly3dToPoly2d( vector < vector < vec3d > > & invec, vector < vector < vec2d > > & outvec );
+
+    virtual double BuildToFromClipper( Matrix4d & toclip, Matrix4d & fromclip, bool translate_to_max = true );
+
+    virtual void ClosePaths( Clipper2Lib::Paths64 & pths );
+
+    virtual void Union( Clipper2Lib::Paths64 & pths, Clipper2Lib::Paths64 & sol );
+    virtual void Union( vector < Clipper2Lib::Paths64 > & pthsvec,  Clipper2Lib::Paths64 & sol );
+    virtual void Union( vector < Clipper2Lib::Paths64 > & pthsvec, vector < Clipper2Lib::Paths64 > & solvec, vector < string > & ids );
+
+    virtual void Intersect( Clipper2Lib::Paths64 & pthA, Clipper2Lib::Paths64 & pthB, Clipper2Lib::Paths64 & sol );
+    virtual void Intersect( vector < Clipper2Lib::Paths64 > & pthsvecA, Clipper2Lib::Paths64 & pthB, vector < Clipper2Lib::Paths64 > & solvec );
+    virtual void Intersect( vector < Clipper2Lib::Paths64 > & pthsvec,  Clipper2Lib::Paths64 & sol );
+
+    vector < TMesh * > Triangulate( const vector < vector < vec2d > > &solutionPolyVec2d, const vector < vector < vec3d > > &solutionPolyVec3d, const vector < bool > &isHole, bool addspherepoints = false, double r = 0.0 );
+    virtual void Triangulate_TRI( const vector < vector < vec3d > > &solutionPolyVec3d, vector < vector < int > > &connlist, const vector < vec3d > & addpts );
+    bool Triangulate_DBA( const vector < vector < vec3d > > &solutionPolyVec3d, vector < vector < int > > &connlist, const vector < vec3d > &addpts );
+
+    virtual bool PtInHole( const vec2d &p, const vector < vector < vec2d > > &polyvec2d, const vector < bool > &isHole );
+
+    virtual void MarkHoles( const Clipper2Lib::Paths64 & pths, vector < bool > &isHole );
+    virtual void AreaReport( Results* res, const string &resname, const string &doc, const Clipper2Lib::Paths64 & pths, double scale, vector < bool > &isHole, bool holerpt = false );
+
+    virtual NameValData *AreaReport ( Results *res, const string &resname, const string &doc,
+                                      const vector < Clipper2Lib::Paths64 > &pthsvec, double scale );
+
+    virtual Results* Project( vector < TMesh* > &targetTMeshVec, const vec3d & dir );
+    virtual Results* Project( vector < TMesh* > &targetTMeshVec, vector < TMesh* > &boundaryTMeshVec, const vec3d & dir, bool diskSegmentBreakdown );
+
+    virtual void Dump( vector < vector < vec3d > > & pthsvec, const string & fname );
+    virtual void Dump( Clipper2Lib::Paths64 & pthsvec, const string & fname );
+    virtual void Dump( vector < Clipper2Lib::Paths64 > & pthsvec, const string & fname );
+
+    BndBox m_BBox;
+
+private:
+
+    ProjectionMgrSingleton();
+    ProjectionMgrSingleton( ProjectionMgrSingleton const& copy ) = delete;            // Not Implemented
+    ProjectionMgrSingleton& operator=( ProjectionMgrSingleton const& copy ) = delete; // Not Implemented
+
+    static void Init();
+    static void Wype();
+
+};
+
+#define ProjectionMgr ProjectionMgrSingleton::getInstance()
+
+#endif
