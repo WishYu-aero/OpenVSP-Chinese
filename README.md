@@ -4,7 +4,10 @@
 
 [![License: NOSA 1.3](https://img.shields.io/badge/License-NOSA%201.3-blue.svg)](source/OpenVSP/LICENSE)
 [![Windows](https://img.shields.io/badge/Platform-Windows%20x64-0078d4.svg)](#)
-[![Translation audit](https://img.shields.io/badge/Translation%20audit-0%20untranslated%20literals-1f8b4c.svg)](docs/RELEASE_CHECKLIST.md)
+[![GitHub Stars](https://img.shields.io/github/stars/WishYu-aero/OpenVSP-Chinese?style=flat-square&color=yellow&label=Stars)](https://github.com/WishYu-aero/OpenVSP-Chinese/stargazers)
+[![GitHub Forks](https://img.shields.io/github/forks/WishYu-aero/OpenVSP-Chinese?style=flat-square&color=1f6feb&label=Forks)](https://github.com/WishYu-aero/OpenVSP-Chinese/network/members)
+[![总下载量](https://img.shields.io/github/downloads/WishYu-aero/OpenVSP-Chinese/total?style=flat-square&color=2ea043&label=总下载量)](https://github.com/WishYu-aero/OpenVSP-Chinese/releases)
+[![最新版本](https://img.shields.io/github/v/release/WishYu-aero/OpenVSP-Chinese?style=flat-square&color=orange&label=最新版本&include_prereleases)](https://github.com/WishYu-aero/OpenVSP-Chinese/releases)
 
 OpenVSP 3.51.2 简体中文汉化版，面向 Windows x64。
 
