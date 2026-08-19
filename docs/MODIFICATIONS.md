@@ -66,7 +66,7 @@ Provides the release-time checklist for GitHub Releases.
 
 ## Attribution
 
-Originator: [WishYu-aero](https://github.com/WishYu-aero) / VSP-Chinese
+Originator: [WishYu-aero](https://github.com/WishYu-aero) / OpenVSP-Chinese
 contributors.
 
 All modifications listed here are distributed under the same NOSA 1.3 terms as
